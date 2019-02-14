@@ -24,21 +24,24 @@ export function init(serverInstance){
 }
 
 function clientConnected(clientId){
+    // Create client data and add client to map
+    let clientData = new ClientData();
+    clientData.currentState = StageState.Login;
+    clientDataMap.set(clientId, clientData);
+    
+    printClientDataMap();
+    
     //Set the client to the current stage
     let currentStage = server.getCurrentStage();
     if(currentStage){
         console.log('sending start stage event to client');
         server.send(Events.START_STAGE, server.getCurrentStage().number).toClient(clientId);
+        sendClientData(clientId);
     }else{
         console.log('admin has not started stage yet');
     }
 
-    // Create client data and add client to map
-    let clientData = new ClientData();
-    clientData.currentState = StageState.Login;
-    clientDataMap.set(clientId, clientData);
-
-    printClientDataMap();
+    
 }
 
 function clientReconnected(clientId){
