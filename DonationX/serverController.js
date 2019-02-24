@@ -23,7 +23,7 @@ class ClientData {
 // When they summit a donation, that user in DB gets updated.
 
 // Map where CPR is key - you can't have a stored user without CPR.
-let db = [];
+let db;
 
 //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
 // Map where clientId is key
@@ -35,6 +35,9 @@ export function init(serverInstance){
     server = serverInstance;
 
     clientDataMap = new Map();
+    db = new Map();
+
+    currentGroupType = Group.Control;
 }
 
 function clientConnected(clientId){
@@ -54,6 +57,8 @@ function clientConnected(clientId){
     }else{
         console.log('admin has not started stage yet');
     }
+
+    sendClientsToAdmin();
 }
 
 function clientReconnected(clientId){
@@ -71,6 +76,8 @@ function clientReconnected(clientId){
 
 function clientDisconnected(clientId){
     clientDataMap.delete(clientId);
+
+    sendClientsToAdmin();
 }
 
 function dbCreateAddUser(userData){
@@ -97,23 +104,41 @@ function onUserLogin(clientId, data){
     console.log('Received onUserLogin event from client with ID: ' + clientId);
 
     // Check if user already exists...
+    console.log('Checking if user exists in DB...');
     let existingUser = dbGetUserFromCPR(data.cpr);
 
     if(existingUser){
-        (clientDataMap.set(existingUser));
+        console.log('user found');
+        clientDataMap.set(existingUser);
     }
     else{
-        existingUser.currentState = StageState.Waiting;
-        dbCreateAddUser(clientDataMap.get(clientId));
+        console.log('user not found');
+        let clientData = clientDataMap.get(clientId);
+        clientData.currentState = StageState.Pass1;
+        clientData.cpr = data.cpr;
+        clientData.group = currentGroupType;
+        dbCreateAddUser(clientData);
     }
 
+    
     printClientDataMap();
+    printDb();
+
+    loadClientGroup(clientId);
 }
 
 function printClientDataMap(){
     console.log('Printing ClientDataMap...\n');
 
     for (const [key, value] of clientDataMap) {
+        console.log('client: ' + key + ' = ' + JSON.stringify(value));
+    }
+}
+
+function printDb(){
+    console.log('\nPrinting Db...\n');
+
+    for (const [key, value] of db) {
         console.log('client: ' + key + ' = ' + JSON.stringify(value));
     }
 }
@@ -136,9 +161,10 @@ function onDonation(clientId, data){
 
     let clientData = clientDataMap.get(clientId);
     clientData.donatedAmount = Number(data.amount);
-    clientData.currentState = StageState.Overview;
+    clientData.currentState = StageState.Pass2;
     sendClientData(clientId);
-
+    
+/*
     console.log('Making donations arr..')
     // Client needs all current donations
     let donations = [];
@@ -156,7 +182,7 @@ function onDonation(clientId, data){
     };
 
     console.log('Sending donations to client: ' + donations);
-    server.send('setDonations', dataMsg).toClient(clientId);
+    server.send('setDonations', dataMsg).toClient(clientId);*/
 }
 
 function loadTreatmentGroup2(){
@@ -235,7 +261,7 @@ export const serverCommands = {
     'getClients': (server, _, ...args) => {
         console.log('getClients command received...');
 
-        server.send('setClients', 'test').toAdmin();
+        sendClientsToAdmin();
     }
 }
 
@@ -265,13 +291,71 @@ function setGroupType(type){
     currentGroupType = type;
 }
 
+function loadClientGroup(client){
+    switch(currentGroupType){
+        case Group.Control:
+            loadClientCurrentStateControl(client);
+            break;
+        case Control.Semi:
+            loadClientCurrentStateSemi(client);
+            break;
+        case Control.Full:
+            loadClientCurrentStateFull(client);
+            break;
+    }
+}
+
+function loadClientCurrentStateControl(client){
+    switch(client.currentState){
+        case StageState.Login:
+            break;
+        case StageState.Waiting:
+            break;
+        case StageState.PickAmount:
+            loadControl1(client);
+            break;
+        case StageState.Overview:
+            loadControl2(client);
+            break;
+    }
+}
+
+function loadClientCurrentStateSemi(client){
+    switch(client.currentState){
+        case StageState.Login:
+            break;
+        case StageState.Waiting:
+            break;
+        case StageState.PickAmount:
+            loadSemi1(client);
+            break;
+        case StageState.Overview:
+            loadSemi2(client);
+            break;
+    }
+}
+
+function loadClientCurrentStateFull(client){
+    switch(client.currentState){
+        case StageState.Login:
+                break;
+        case StageState.Waiting:
+                break;
+        case StageState.PickAmount:
+            loadFull1(client);
+            break;
+        case StageState.Overview:
+            loadFull2(client);
+            break;
+    }
+}
+
 function loadStage(clientId, name){
     if(clientId){
         server.send(name, null).toClient(clientId);
     }else{
         server.send(name, null).toAll();
     }
-
 }
 
 function loadControl1(clientId){
@@ -296,4 +380,8 @@ function loadFull1(clientId){
 
 function loadFull2(clientId){
     loadStage(clientId, "loadFull2");
+}
+
+function sendClientsToAdmin(){
+    server.send('setClients', {clients: Array.from( clientDataMap.values() )}).toAdmin();
 }

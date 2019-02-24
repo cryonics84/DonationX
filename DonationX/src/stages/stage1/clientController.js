@@ -1,5 +1,5 @@
 import { StageState } from '../../../SharedFunctions';
-import { HTMLStates } from "./HTMLStates";
+import { HTMLStates, getHTMLFromStateGroup } from "./HTMLStates";
 // import logoImg from './images/Transcend-Running-Academy-Donation.png';
 // import backgroundImg from './images/backgrounds-blank-blue-953214.jpg';
 
@@ -15,13 +15,13 @@ export function init(clientInstance) {
 	//changeState(StageState.Login);
 
 }
-
+/*
 function GetHTMLFromState(state) {
 	switch (state) {
 		case StageState.Login:
 			console.log('returning login html');
 			return HTMLStates.stateLogin;
-		case StageState.PickAmount:
+		case StageState.Pass1:
 			console.log('returning pick-amount html');
 			return HTMLStates.statePickAmount;
 		case StageState.Overview:
@@ -31,9 +31,10 @@ function GetHTMLFromState(state) {
 			return HTMLStates.stateLogin;
 	}
 }
+*/
 
-function changeState(state) {
-	insertHTML(GetHTMLFromState(state));
+function changeState(state, group) {
+	insertHTML(getHTMLFromStateGroup(state,group));
 
 	switch (state) {
 		case StageState.Waiting:
@@ -42,11 +43,11 @@ function changeState(state) {
 		case StageState.Login:
 			initStateLogin();
 			break;
-		case StageState.PickAmount:
-			initStatePickAmount();
+		case StageState.Pass1:
+			initStatePass1();
 			break;
-		case StageState.Overview:
-            initStateOverview();
+		case StageState.Pass2:
+            initStatePass2();
             break;
 		default:
 			console.log("Something went wrong...");
@@ -64,8 +65,8 @@ function initStateLogin() {
 
 }
 
-function initStatePickAmount() {
-	console.log("loading pick-amount state");
+function initStatePass1() {
+	console.log("loading Pass1");
 
     let amountText = document.getElementById("amountContainer");
     let amountSlider = document.getElementById("amountSlider");
@@ -93,7 +94,7 @@ function onDonate(){
     //changeState(StageState.Overview);
 }
 
-function initStateOverview(){
+function initStatePass2(){
     console.log("loading overview state");
 
     let cancelBtn = document.getElementById("cancelButton");
@@ -112,7 +113,7 @@ function onCommitDonation(){
 }
 
 function onCancelDonation(){
-	changeState(StageState.PickAmount);
+	//changeState(StageState.PickAmount);
 }
 
 
@@ -128,17 +129,18 @@ function onSummitCPR() {
 	console.log('Sending User Data: ' + JSON.stringify(data));
 	client.send('onUserLogin', data);
 
-	changeState(StageState.PickAmount);
+	//changeState(StageState.PickAmount);
 }
 
 function insertHTML(html) {
-	//console.log('loading html: ' + JSON.stringify(html));
+	
+	console.log('loading html: ' + JSON.stringify(html));
 	document.getElementById("header").innerHTML = (HTMLStates.header);
 	document.getElementById("content").innerHTML = (html);
 }
 
 function setClientData(clientData) {
-	changeState(clientData.currentState);
+	changeState(clientData.currentState, clientData.group);
 
 	switch (clientData.currentState) {
 		case StageState.Waiting:
@@ -147,10 +149,10 @@ function setClientData(clientData) {
 		case StageState.Login:
 
 			break;
-		case StageState.PickAmount:
+		case StageState.Pass1:
 			document.getElementById("amountSlider").value = clientData.donatedAmount;
 			break;
-		case StageState.Overview:
+		case StageState.Pass2:
 			break;
 		default:
 			console.log("Something went wrong...");
@@ -173,7 +175,7 @@ function setDonations(donations){
         // Append a text node to the cell
         let newText  = document.createTextNode(donations[i]);
         newCell.appendChild(newText);
-        newCell.setAttribute("class", "w3-center");
+        //newCell.setAttribute("class", "w3-center");
 
 /*
         // Insert a cell in the row at index 0

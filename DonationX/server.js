@@ -5,7 +5,7 @@ import * as serverController from "./serverController";
 const stages = [stage1]
 
 let events = serverController.serverEvents;
-let commands = {};
+let commands = serverController.serverCommands;
 
 const monsterr = createServer({
   network: Network.pairs(8),
