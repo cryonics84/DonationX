@@ -24,6 +24,9 @@ function GetHTMLFromState(state) {
 		case StageState.PickAmount:
 			console.log('returning pick-amount html');
 			return HTMLStates.statePickAmount;
+		case StageState.Overview:
+            console.log('returning overview html');
+            return HTMLStates.stateOverview;
 		default:
 			return HTMLStates.stateLogin;
 	}
@@ -42,6 +45,9 @@ function changeState(state) {
 		case StageState.PickAmount:
 			initStatePickAmount();
 			break;
+		case StageState.Overview:
+            initStateOverview();
+            break;
 		default:
 			console.log("Something went wrong...");
 			break;
@@ -60,7 +66,55 @@ function initStateLogin() {
 
 function initStatePickAmount() {
 	console.log("loading pick-amount state");
+
+    let amountText = document.getElementById("amountContainer");
+    let amountSlider = document.getElementById("amountSlider");
+    amountText.innerHTML = amountSlider.value;
+
+    // Update the current slider value (each time you drag the slider handle)
+    amountSlider.oninput = function() {
+        amountText.innerHTML = this.value;
+    }
+
+    let donateBtn = document.getElementById("donateButton");
+    donateBtn.onclick = (function () {
+        onDonate();
+    });
 }
+
+function onDonate(){
+    let amountSlider = document.getElementById("amountSlider");
+
+	let data = { amount: amountSlider.value };
+
+    console.log('Sending User Data: ' + JSON.stringify(data));
+    client.send('onDonation', data);
+
+    //changeState(StageState.Overview);
+}
+
+function initStateOverview(){
+    console.log("loading overview state");
+
+    let cancelBtn = document.getElementById("cancelButton");
+    cancelBtn.onclick = (function () {
+        onCancelDonation();
+    });
+
+    let summitBtn = document.getElementById("commitButton");
+    summitBtn.onclick = (function () {
+        onCommitDonation();
+    });
+}
+
+function onCommitDonation(){
+
+}
+
+function onCancelDonation(){
+	changeState(StageState.PickAmount);
+}
+
 
 function onSummitCPR() {
 	console.log('Submitting data');
@@ -94,7 +148,9 @@ function setClientData(clientData) {
 
 			break;
 		case StageState.PickAmount:
-			document.getElementById("fAmount").value = clientData.donatedAmount;
+			document.getElementById("amountSlider").value = clientData.donatedAmount;
+			break;
+		case StageState.Overview:
 			break;
 		default:
 			console.log("Something went wrong...");
@@ -102,8 +158,41 @@ function setClientData(clientData) {
 	}
 }
 
+function setDonations(donations){
+    console.log("settings overview table");
+
+    let tableRef = document.getElementById('donationTable').getElementsByTagName('tbody')[0];
+    // Insert a row in the table at the last row
+
+    console.log('iterating donations... ' + donations);
+    for (let i = 0; i < donations.length; i++) {
+        console.log('i = ' + i + ', item = ' + donations[i]);
+        let newRow   = tableRef.insertRow(tableRef.rows.length);
+        var newCell = newRow.insertCell(0);
+
+        // Append a text node to the cell
+        let newText  = document.createTextNode(donations[i]);
+        newCell.appendChild(newText);
+        newCell.setAttribute("class", "w3-center");
+
+/*
+        // Insert a cell in the row at index 0
+        let newCell  = newRow.insertCell(0);
+
+        // Append a text node to the cell
+        let newText  = document.createTextNode(donations[i]);
+        newCell.appendChild(newText);*/
+	}
+}
+
 export const clientEvents = {
 	'setClientData': function (clientId, data) {
 		setClientData(data)
-	}
+	},
+    'setDonations': function (clientId, data) {
+        setDonations(data.donations)
+    },
+
+
+
 };
