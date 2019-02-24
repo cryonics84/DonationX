@@ -123,5 +123,10 @@ export const serverEvents = {
 export const serverCommands = {
     [Events.START_STAGE]: (server, _, ...args) => {
         console.log('Stage started...');
+    },
+    'getClients': (server, _, ...args) => {
+        console.log('getClients command received...');
+
+        server.send('setClients', 'test').toAdmin();
     }
 };

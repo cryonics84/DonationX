@@ -1,11 +1,40 @@
-<!--
-  You can define html freely here.
-  The html will only be rendered on the admin.
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 
-  We suggest that you wrap the html in a div.
--->
 <div id="admin">
-  <button id="admin-button-start">Start</button>
-  <button id="admin-button-next">Next</button>
-  <button id="admin-button-reset">Reset</button>
+
+	<b>Select Type:</b>
+
+	<input class="w3-radio" type="radio" name="gender" value="Normal" checked>
+	<label>Normal</label>
+
+	<input class="w3-radio" type="radio" name="gender" value="Semi">
+	<label>Semi</label>
+
+	<input class="w3-radio" type="radio" name="gender" value="Full">
+	<label>Full</label>
+
+	<p>List of clients:</p>
+
+	<table class="w3-table">
+		<tr>
+		  <th>ID</th>
+		  <th>Status</th>
+		  <th>Booth ID</th>
+		  <th>CPR</th>
+		</tr>
+		<tr>
+		  <td>Jill</td>
+		  <td>Smith</td>
+		  <td>50</td>
+		</tr>
+	</table>
+
+	<br>
+	<div>
+		<button id="admin-button-start">Start</button>
+		<!-- <button id="admin-button-next">Next</button> !-->
+		<button id="admin-button-reset">Reset</button>
+	</div>
+	
 </div>
