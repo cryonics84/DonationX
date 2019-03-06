@@ -1,22 +1,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 
-<div id="admin">
+<div id="admin" class="w3-center w3-blue" style="height: 100%">
 
-	<b>Select Type:</b>
+	<br>
+	<br>
 
-	<input class="w3-radio" type="radio" name="gender" value="Normal" checked>
-	<label>Normal</label>
+	<div id="config" class="w3-card w3-white" style="display: block">
 
-	<input class="w3-radio" type="radio" name="gender" value="Semi">
-	<label>Semi</label>
+		<br>
 
-	<input class="w3-radio" type="radio" name="gender" value="Full">
-	<label>Full</label>
+		<b>Select Type:</b>
 
-	<p>List of clients:</p>
+		<input id="radioNormal" class="w3-radio" type="radio" name="gender" value="Control" checked>
+		<label>Control</label>
 
-	<table class="w3-table w3-centered" id='clientTable'>
+		<input id="radioSemi" class="w3-radio" type="radio" name="gender" value="Semi">
+		<label>Semi</label>
+
+		<input id="radioFull" class="w3-radio" type="radio" name="gender" value="Full">
+		<label>Full</label>
+
+		<br><br>
+		<div id="fullSizeContainer">
+			<label>Full Group Size</label>
+			<input style="width: 35px" type="number" id="fullSize" name="fullSize" min="1" max="9" value="4">
+		</div>
+
+		<br>
+
+	</div>
+
+	<br>
+
+	<div>
+		<button class="w3-button w3-white w3-round" id="startButton">Start</button>
+		<label id="isRunning">Server is OFF</label>
+	</div>
+
+
+	<div>
+		<br>
+		<button class="w3-button w3-white w3-round" id="downloadData">Download Data</button>
+	</div>
+
+
+	<h3 class="w3-black"><b>Connected clients</b></h3>
+
+	<table class="w3-table w3-centered w3-white" id='clientTable'>
 		<tr>
 		  <th>Status</th>
 		  <th>Booth ID</th>
@@ -27,11 +58,12 @@
 		</tr>
 	</table>
 
-	<br>
+<br><br>
+
 	<div>
-		<button id="admin-button-start">Start</button>
-		<!-- <button id="admin-button-next">Next</button> !-->
-		<button id="admin-button-reset">Reset</button>
+		<button class="w3-button w3-red w3-round" id="clearDBbtn">Empty Database!</button>
+		<label>Number of clients in database: <span id="dbCount">--</span></label>
 	</div>
-	
+
+
 </div>

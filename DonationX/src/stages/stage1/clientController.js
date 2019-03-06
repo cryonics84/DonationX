@@ -1,4 +1,4 @@
-import { StageState } from '../../../SharedFunctions';
+import { StageState, Group } from '../../../SharedFunctions';
 import { HTMLStates, getHTMLFromStateGroup } from "./HTMLStates";
 // import logoImg from './images/Transcend-Running-Academy-Donation.png';
 // import backgroundImg from './images/backgrounds-blank-blue-953214.jpg';
@@ -33,26 +33,14 @@ function GetHTMLFromState(state) {
 }
 */
 
-function changeState(state, group) {
-	insertHTML(getHTMLFromStateGroup(state,group));
 
-	switch (state) {
-		case StageState.Waiting:
-			//This should never be triggered...
-			break;
-		case StageState.Login:
-			initStateLogin();
-			break;
-		case StageState.Pass1:
-			initStatePass1();
-			break;
-		case StageState.Pass2:
-            initStatePass2();
-            break;
-		default:
-			console.log("Something went wrong...");
-			break;
-	}
+function initStateBeforePass2(){
+    console.log("loading after pass 1");
+
+    let nextButton = document.getElementById("nextButton");
+    nextButton.onclick = (function () {
+        getNextState({});
+    });
 }
 
 function initStateLogin() {
@@ -65,71 +53,79 @@ function initStateLogin() {
 
 }
 
-function initStatePass1() {
-	console.log("loading Pass1");
+
+function initStatePass1(data) {
+    console.log("loading Pass1 control");
 
     let amountText = document.getElementById("amountContainer");
     let amountSlider = document.getElementById("amountSlider");
-    amountText.innerHTML = amountSlider.value;
+
+    if(!amountSlider) console.log('Could not find slider!');
+
+    amountText.innerHTML = amountSlider.value + "%";
 
     // Update the current slider value (each time you drag the slider handle)
     amountSlider.oninput = function() {
-        amountText.innerHTML = this.value;
+        amountText.innerHTML = this.value + "%";
+    };
+
+    let donateBtn = document.getElementById("confirmButton");
+    donateBtn.onclick = (function () {
+        onConfirm();
+    });
+}
+
+function onConfirm(){
+    let amountSlider = document.getElementById("amountSlider");
+	let data = { amount: amountSlider.value };
+    getNextState(data);
+}
+
+function getNextState(data){
+    console.log('Sending User Data: ' + JSON.stringify(data));
+    client.send('onNextState', data);
+}
+
+function initStatePass2(data){
+    console.log("loading pass2 state");
+
+    let amountText = document.getElementById("amountContainer");
+    let amountSlider = document.getElementById("amountSlider");
+    let earningsText = document.getElementById("earnings");
+    if(!amountSlider) console.log('Could not find slider!');
+
+    amountSlider.value = data.clientData.donatedAmount;
+    amountText.innerText = data.clientData.donatedAmount + "%";
+    earningsText.innerText = data.clientData.donatedAmount + "%";
+
+    // Update the current slider value (each time you drag the slider handle)
+    amountSlider.oninput = function() {
+        amountText.innerHTML = this.value + "%";
+    };
+
+    if(data.clientData.group === Group.Full){
+        setDonations(data.donations);
     }
 
-    let donateBtn = document.getElementById("donateButton");
-    donateBtn.onclick = (function () {
-        onDonate();
-    });
-}
-
-function onDonate(){
-    let amountSlider = document.getElementById("amountSlider");
-
-	let data = { amount: amountSlider.value };
-
-    console.log('Sending User Data: ' + JSON.stringify(data));
-    client.send('onDonation', data);
-
-    //changeState(StageState.Overview);
-}
-
-function initStatePass2(){
-    console.log("loading overview state");
-
-    let cancelBtn = document.getElementById("cancelButton");
-    cancelBtn.onclick = (function () {
-        onCancelDonation();
-    });
-
-    let summitBtn = document.getElementById("commitButton");
+    let summitBtn = document.getElementById("confirmButton");
     summitBtn.onclick = (function () {
-        onCommitDonation();
+        onConfirm();
     });
 }
-
-function onCommitDonation(){
-
-}
-
-function onCancelDonation(){
-	//changeState(StageState.PickAmount);
-}
-
 
 function onSummitCPR() {
 	console.log('Submitting data');
 
-	let form = document.getElementById("userForm");
-	console.log('Form Values: ' + form.elements);
-	let cpr = form.fCpr.value;
+	let cpr = document.getElementById("cprInput").value;
+    let booth = document.getElementById("boothInput").value;
 
-	let data = { cpr: cpr };
+	let data = { cpr: cpr, booth: booth };
 
-	console.log('Sending User Data: ' + JSON.stringify(data));
-	client.send('onUserLogin', data);
+	getNextState(data);
+}
 
-	//changeState(StageState.PickAmount);
+function serverStopped(){
+
 }
 
 function insertHTML(html) {
@@ -139,20 +135,30 @@ function insertHTML(html) {
 	document.getElementById("content").innerHTML = (html);
 }
 
-function setClientData(clientData) {
-	changeState(clientData.currentState, clientData.group);
+function setClientData(data) {
 
-	switch (clientData.currentState) {
-		case StageState.Waiting:
-			//This should never be triggered...
+    insertHTML(getHTMLFromStateGroup(data.clientData.currentState, data.clientData.group));
+
+	switch (data.clientData.currentState) {
+		case StageState.Waiting1:
+			console.log('Waiting for server to start...');
 			break;
+        case StageState.Waiting2:
+            console.log('Waiting for full group to finish survey...');
+            break;
 		case StageState.Login:
-
+            initStateLogin();
 			break;
 		case StageState.Pass1:
-			document.getElementById("amountSlider").value = clientData.donatedAmount;
+            initStatePass1();
 			break;
+        case StageState.AfterPass1:
+            break;
+        case StageState.BeforePass2:
+            initStateBeforePass2();
+            break;
 		case StageState.Pass2:
+            initStatePass2(data);
 			break;
 		default:
 			console.log("Something went wrong...");
@@ -160,6 +166,59 @@ function setClientData(clientData) {
 	}
 }
 
+function setDonations(donations){
+    if(donations){
+        if(donations[0]){
+            let cell = document.getElementById('participantAcell');
+            if(cell){
+                cell.innerHTML = donations[0] + "%";
+            }else{
+                console.log('A Cell not found...');
+            }
+
+        }
+        else{
+            document.getElementById('participantAheader').style.display = "none";
+            document.getElementById('participantAcell').style.display = "none";
+        }
+        if(donations[1]){
+            let cell = document.getElementById('participantBcell');
+            if(cell){
+                cell.innerHTML = donations[1] + "%";
+            }else{
+                console.log('B Cell not found...');
+            }
+        }
+        else{
+            document.getElementById('participantBheader').style.display = "none";
+            document.getElementById('participantBcell').style.display = "none";
+        }
+        if(donations[2]){
+            let cell = document.getElementById('participantCcell');
+            if(cell){
+                cell.innerHTML = donations[2] + "%";
+            }else{
+                console.log('C Cell not found...');
+            }
+        }
+        else{
+            document.getElementById('participantCheader').style.display = "none";
+            document.getElementById('participantCcell').style.display = "none";
+        }
+    }else{
+        document.getElementById('participantAheader').style.display = "none";
+        document.getElementById('participantAcell').style.display = "none";
+
+        document.getElementById('participantBheader').style.display = "none";
+        document.getElementById('participantBcell').style.display = "none";
+
+        document.getElementById('participantCheader').style.display = "none";
+        document.getElementById('participantCcell').style.display = "none";
+    }
+}
+
+
+/*
 function setDonations(donations){
     console.log("settings overview table");
 
@@ -177,24 +236,17 @@ function setDonations(donations){
         newCell.appendChild(newText);
         //newCell.setAttribute("class", "w3-center");
 
-/*
-        // Insert a cell in the row at index 0
-        let newCell  = newRow.insertCell(0);
-
-        // Append a text node to the cell
-        let newText  = document.createTextNode(donations[i]);
-        newCell.appendChild(newText);*/
 	}
 }
-
+*/
 export const clientEvents = {
 	'setClientData': function (clientId, data) {
-		setClientData(data)
+		setClientData(data);
 	},
-    'setDonations': function (clientId, data) {
+
+    /*
+	'setDonations': function (clientId, data) {
         setDonations(data.donations)
     },
-
-
-
+*/
 };
